@@ -1,22 +1,31 @@
 'use client';
+import { useLoginMutation } from "@/redux/features/api/auth/authApi";
 import { Lock, Mail } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const router = useRouter();
 
-  const handleSubmit = () => {
-    console.log('Login submitted', { email, password, rememberMe });
+  const [login, { isLoading, isError, error }] = useLoginMutation();
+
+  const handleLogin = async (credentials: { username: string; password: string }) => {
+    try {
+      const response = await login(credentials).unwrap();
+      console.log("Login successful:", response);
+      router.push('/'); // Redirect to dashboard on successful login
+    } catch (err) {
+      console.error("Login failed:", err);
+    }
   };
-
   return (
     <div className="w-full max-w-md">
       <div className="mb-8">
         <h2 className="text-4xl font-bold text-gray-900 mb-2">Sign In</h2>
       </div>
-
       <div className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -66,7 +75,7 @@ const LoginForm = () => {
         </div>
 
         <button
-          onClick={handleSubmit}
+          onClick={() => handleLogin({ username: email, password })}
           className="w-full bg-gray-900 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-800 transition duration-200"
         >
           Sign In

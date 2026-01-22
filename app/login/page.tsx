@@ -2,6 +2,7 @@ import LoginForm from '@/componets/auth/LoginForm';
 
 
 const LoginPage = () => {
+
   return (
     <div className="min-h-screen flex">
       {/* Left Section - Image & Text */}

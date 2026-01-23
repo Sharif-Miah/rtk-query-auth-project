@@ -1,9 +1,11 @@
-'use client'
+"use client";
 
-import React, { useState } from 'react';
-import {  ShoppingCart, Heart, Star} from 'lucide-react';
-import { useGetProductsQuery } from '@/redux/features/api/product/productApi';
-import Image from 'next/image';
+import React, { useState } from "react";
+import { ShoppingCart, Heart, Star } from "lucide-react";
+import { useGetProductsQuery } from "@/redux/features/api/product/productApi";
+import Image from "next/image";
+import { useDispatch } from "react-redux";
+import { addToCart } from "@/redux/features/cart/cartSlice";
 
 // Types
 interface Product {
@@ -36,8 +38,8 @@ const StarRating: React.FC<StarRatingProps> = ({ rating, reviews }) => {
             key={star}
             className={`w-4 h-4 ${
               star <= rating
-                ? 'fill-yellow-400 text-yellow-400'
-                : 'fill-gray-200 text-gray-200'
+                ? "fill-yellow-400 text-yellow-400"
+                : "fill-gray-200 text-gray-200"
             }`}
           />
         ))}
@@ -50,6 +52,7 @@ const StarRating: React.FC<StarRatingProps> = ({ rating, reviews }) => {
 // Product Card Component
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const dispatch = useDispatch();
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 group">
@@ -67,7 +70,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         >
           <Heart
             className={`w-5 h-5 ${
-              isWishlisted ? 'fill-red-500 text-red-500' : 'text-gray-600'
+              isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600"
             }`}
           />
         </button>
@@ -81,13 +84,26 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {product.title}
         </h3>
 
-        <StarRating rating={product.rating} reviews={0}  />
+        <StarRating rating={product.rating} reviews={0} />
 
         <div className="flex items-center justify-between mt-4">
           <span className="text-2xl font-bold text-gray-900">
             ${product.price.toFixed(2)}
           </span>
-          <button className="bg-black text-white px-6 py-2 rounded-full hover:bg-gray-800 transition flex items-center gap-2">
+          <button
+            onClick={() =>
+              dispatch(
+                addToCart({
+                  id: product.id,
+                  title: product.title,
+                  price: product.price,
+                  thumbnail: product.thumbnail,
+                  quantity: 1,
+                }),
+              )
+            }
+            className="bg-black text-white px-6 py-2 rounded-full hover:bg-gray-800 transition flex items-center gap-2"
+          >
             <ShoppingCart className="w-4 h-4" />
             Add to Cart
           </button>
@@ -101,20 +117,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 const ProductsPageComponent = () => {
   const { data: products, isLoading, isError } = useGetProductsQuery({});
 
-  console.log(products)
-
   const [filter, setFilter] = useState<string>("All");
 
   const categories = ["All", "beauty", "fragrances", "furniture", "groceries"];
 
   // FIXED: Correct filtering logic
-  const filteredProducts = filter === "All" 
-    ? products?.products || []
-    : products?.products?.filter((product: Product) => product.category === filter) || [];
+  const filteredProducts =
+    filter === "All"
+      ? products?.products || []
+      : products?.products?.filter(
+          (product: Product) => product.category === filter,
+        ) || [];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16 px-6">
         <div className="max-w-7xl mx-auto text-center">
@@ -142,13 +158,12 @@ const ProductsPageComponent = () => {
                 onClick={() => setFilter(category)}
                 className={`px-6 py-2 rounded-full whitespace-nowrap transition cursor-pointer ${
                   filter === category
-                    ? 'bg-black text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? "bg-black text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
                 {category}
               </button>
-              
             ))}
           </div>
         </div>
@@ -171,7 +186,9 @@ const ProductsPageComponent = () => {
           </div>
         ) : isError ? (
           <div className="text-center py-12">
-            <p className="text-red-600">Error loading products. Please try again.</p>
+            <p className="text-red-600">
+              Error loading products. Please try again.
+            </p>
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-12">
@@ -194,9 +211,15 @@ const ProductsPageComponent = () => {
             Your one-stop shop for amazing products
           </p>
           <div className="flex items-center justify-center gap-6">
-            <a href="#" className="text-gray-400 hover:text-white transition">Privacy Policy</a>
-            <a href="#" className="text-gray-400 hover:text-white transition">Terms of Service</a>
-            <a href="#" className="text-gray-400 hover:text-white transition">Contact Us</a>
+            <a href="#" className="text-gray-400 hover:text-white transition">
+              Privacy Policy
+            </a>
+            <a href="#" className="text-gray-400 hover:text-white transition">
+              Terms of Service
+            </a>
+            <a href="#" className="text-gray-400 hover:text-white transition">
+              Contact Us
+            </a>
           </div>
           <p className="text-gray-500 text-sm mt-6">
             © 2026 ShopHub. All rights reserved.

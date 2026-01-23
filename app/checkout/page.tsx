@@ -1,7 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
-import React, { useState } from 'react';
+import  { useState } from 'react';
 import { CreditCard, Lock, ShoppingBag, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { RootState } from '@/redux/store';
+import { useSelector } from 'react-redux';
+import { selectSubtotal, selectTax, selectTotal } from '@/redux/features/cart/cartSelectors';
 
 export default function StripeCheckout() {
   const [formData, setFormData] = useState({
@@ -16,18 +20,13 @@ export default function StripeCheckout() {
 
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
+  const orderItems = useSelector((state: RootState) => state.cart.items);
+  
+  const subtotal = useSelector(selectSubtotal);
+  const tax = useSelector(selectTax);
+  const total = useSelector(selectTotal);
 
-  const orderItems = [
-    { name: 'Wireless Headphones', quantity: 1, price: 79.99 },
-    { name: 'Smart Watch', quantity: 2, price: 199.99 },
-    { name: 'Laptop Stand', quantity: 1, price: 45.50 }
-  ];
-
-  const subtotal = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const tax = subtotal * 0.1;
-  const total = subtotal + tax;
-
-  const handleChange = (e) => {
+  const handleChange = (e: any) => {
     const { name, value } = e.target;
     let formattedValue = value;
 
@@ -49,15 +48,48 @@ export default function StripeCheckout() {
     setFormData({ ...formData, [name]: formattedValue });
   };
 
-  const handleSubmit = () => {
+  // Function to send confirmation email
+  const sendConfirmationEmail = async () => {
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          name: formData.name,
+          orderItems: orderItems,
+          subtotal: subtotal,
+          tax: tax,
+          total: total,
+          orderDate: new Date().toLocaleDateString(),
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to send email');
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+    }
+  };
+
+  const handleSubmit = async () => {
     if (!formData.email || !formData.cardNumber || !formData.expiry || !formData.cvc || !formData.name || !formData.zip) {
       alert('Please fill in all fields');
       return;
     }
+    
     setProcessing(true);
-    setTimeout(() => {
+    
+    // Simulate payment processing
+    setTimeout(async () => {
       setProcessing(false);
       setSuccess(true);
+      
+      // Send confirmation email after successful payment
+      await sendConfirmationEmail();
     }, 2000);
   };
 
@@ -75,14 +107,11 @@ export default function StripeCheckout() {
             <p className="text-sm text-gray-600">Order confirmation sent to</p>
             <p className="font-semibold text-gray-800">{formData.email}</p>
           </div>
-          <button 
-            onClick={() => setSuccess(false)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition w-full"
-          >
-            <Link href="/products">
-            Continue Shopping
-            </Link>
-          </button>
+          <Link href="/products">
+            <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition w-full">
+              Continue Shopping
+            </button>
+          </Link>
         </div>
       </div>
     );
@@ -208,7 +237,7 @@ export default function StripeCheckout() {
                   </>
                 ) : (
                   <>
-                    <Lock className="w-5 h-5" />
+                    <Lock className="w-5 h-5 cursor-pointer" />
                     Pay ${total.toFixed(2)}
                   </>
                 )}
@@ -231,7 +260,7 @@ export default function StripeCheckout() {
               {orderItems.map((item, index) => (
                 <div key={index} className="flex justify-between items-start">
                   <div className="flex-1">
-                    <p className="font-medium text-gray-800">{item.name}</p>
+                    <p className="font-medium text-gray-800">{item.title}</p>
                     <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
                   </div>
                   <p className="font-semibold text-gray-800">
